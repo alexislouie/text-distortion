@@ -20,25 +20,25 @@ mat4 scaleMatrix(mat4 matrix, vec3 scale) {
 void main()
 {
     vec3 newPosition = position;
-    // TODO: make distortion in a tighter circle 
-    float distortionIntensity = distance(uv, uRayCastUvCoordinates);
-    distortionIntensity = smoothstep(0.1, 1.0, distortionIntensity);
-    distortionIntensity = clamp(distortionIntensity, 0.1, 0.3); 
+    float distortionIntensity = 1.0 - distance(uv, uRayCastUvCoordinates);
+    distortionIntensity = smoothstep(0.0, 1.5, distortionIntensity) + 1.0;
     vDistortionIntensity = distortionIntensity;
- 
 
-    // Use the UV Coordinates  -------------------------------
-    vec3 normalizedVertexPosition = normalize(position);
+    // Pushes vertices away from cursor
+    // vec3 normalizedVertexPosition = normalize(position);
+    // vec3 direction = normalizedVertexPosition - vec3(uRayCastUvCoordinates, -1.0);
+    // vec3 normalizedDirection = normalize(direction);
+    // newPosition += normalizedDirection * 0.1 * distortionIntensity;
 
-    // Find direction 
-    vec3 direction = normalizedVertexPosition - vec3(uRayCastUvCoordinates, -1.0);
-    vec3 normalizedDirection = normalize(direction);
-
-    newPosition += normalizedDirection * 0.1 * distortionIntensity;
+    // Scale based on Intensity 
+    vec3 scale = vec3(distortionIntensity);
+    mat4 newModelMatrix = scaleMatrix(modelMatrix, scale);
 
     // Final Position
-    vec4 modelPosition = modelMatrix * vec4(newPosition, 1.0);
+    vec4 modelPosition = newModelMatrix * vec4(newPosition, 1.0);
 
+    // Final Position - just updates position
+    // vec4 modelPosition = modelMatrix * vec4(newPosition, 1.0);
     
     vec4 viewPosition = viewMatrix * modelPosition;
     vec4 projectedPosition = projectionMatrix * viewPosition;
