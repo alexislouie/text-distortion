@@ -54,58 +54,13 @@ scene.add(camera);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
-/**
- * Distortion Texture
- */
-const distortion = {};
-distortion.canvas = document.createElement('canvas');
-distortion.canvas.width = 256;
-distortion.canvas.height = 128;
-distortion.canvas.style.position = 'fixed';
-distortion.canvas.style.width = '512px';
-distortion.canvas.style.height = '256px';
-distortion.canvas.style.top = 0;
-distortion.canvas.style.left = 0;
-distortion.canvas.style.zIndex = 10;
-distortion.context = distortion.canvas.getContext('2d');
-document.body.append(distortion.canvas);
-
-// Fill the canvas
-distortion.context.fillRect(
-    0,
-    0,
-    distortion.canvas.width,
-    distortion.canvas.height
-);
-
-// Glow image
-distortion.glowImage = new Image();
-// distortion.glowImage.src = './glow.png';
-distortion.glowImage.src = './glow-bigger.png';
-
-// Interactive Plane
-distortion.interactivePlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(3.2, 1.6),
-    new THREE.MeshBasicMaterial({ color: 'goldenrod' })
-);
-scene.add(distortion.interactivePlane);
-
-// Raycaster
-distortion.raycaster = new THREE.Raycaster();
-
-distortion.screenCursor = new THREE.Vector2(9999, 9999);
-distortion.canvasCursor = new THREE.Vector2(9999, 9999);
-distortion.canvasCursorPrevious = new THREE.Vector2(9999, 9999);
-
-// Texture
-distortion.texture = new THREE.CanvasTexture(distortion.canvas);
-
+let screenCursor = new THREE.Vector2(9999, 9999);
 window.addEventListener('pointermove', (event) => {
     const x = (event.clientX / sizes.width) * 2 - 1;
-    distortion.screenCursor.x = x;
+    screenCursor.x = x;
 
     const y = -(event.clientY / sizes.height) * 2 + 1;
-    distortion.screenCursor.y = y;
+    screenCursor.y = y;
 });
 
 /**
@@ -121,8 +76,8 @@ const material = new THREE.ShaderMaterial({
     fragmentShader: distortionFragmentShader,
     uniforms: {
         uRayCastUvCoordinates: new THREE.Uniform(new THREE.Vector2(9999, 9999)),
-        uScreenCursorPosition: new THREE.Uniform(new THREE.Vector2(9999, 9999)),
-        uDistortionTexture: new THREE.Uniform(distortion.texture),
+        // uScreenCursorPosition: new THREE.Uniform(new THREE.Vector2(9999, 9999)),
+        // uDistortionTexture: new THREE.Uniform(distortion.texture),
         uColor: new THREE.Uniform(new THREE.Color('rgb(21, 26, 26)')),
     },
 });
@@ -130,7 +85,7 @@ const material = new THREE.ShaderMaterial({
 /**
  * Text
  */
-let text = `Alta Haas\nGrotesk.`;
+let text = `Alta Haas\nGrotesk`;
 let textGeometry = null;
 let textMesh = new THREE.Mesh();
 
@@ -164,65 +119,13 @@ const tick = () => {
     // Update controls
     controls.update();
 
-    // const intersections = raycaster.intersectObject(textMesh);
-    // raycaster.setFromCamera(distortion.screenCursor, camera);
-
-    distortion.raycaster.setFromCamera(distortion.screenCursor, camera);
-
-    // Find objects that raycaster intersects
-    const intersections = distortion.raycaster.intersectObject(
-        distortion.interactivePlane
-    );
-
+    const newIntersections = raycaster.intersectObject(textMesh);
+    raycaster.setFromCamera(screenCursor, camera);
     // Get the UV coordinates of the mouse on the canvas (in pixel coordinates)
-    if (intersections.length) {
-        const uv = intersections[0].uv;
-        const x = uv.x * distortion.canvas.width;
-        const y = (1 - uv.y) * distortion.canvas.height;
-        distortion.canvasCursor.x = x;
-        distortion.canvasCursor.y = y;
-
+    if (newIntersections.length) {
+        const uv = newIntersections[0].uv;
         material.uniforms.uRayCastUvCoordinates.value.set(uv.x, uv.y);
     }
-
-    // Reset 2D canvas every render
-    distortion.context.globalCompositeOperation = 'source-over';
-    distortion.context.globalAlpha = 0.02;
-    distortion.context.fillRect(
-        0,
-        0,
-        distortion.canvas.width,
-        distortion.canvas.height
-    );
-
-    // Find speed of the cursor
-    const cursorDistance = distortion.canvasCursorPrevious.distanceTo(
-        distortion.canvasCursor
-    );
-    distortion.canvasCursorPrevious.copy(distortion.canvasCursor);
-
-    // Clamp it so max value is 1
-    const alpha = Math.min(cursorDistance * 0.1, 1);
-
-    const glowSize = distortion.canvas.width * 0.25;
-    distortion.context.globalCompositeOperation = 'lighten';
-    distortion.context.globalAlpha = alpha;
-    distortion.context.drawImage(
-        distortion.glowImage,
-        distortion.canvasCursor.x - glowSize * 0.5,
-        distortion.canvasCursor.y - glowSize * 0.5,
-        glowSize,
-        glowSize
-    );
-
-    // Update the screen cursor location uniform
-    material.uniforms.uScreenCursorPosition.value.set(
-        distortion.screenCursor.x,
-        distortion.screenCursor.y
-    );
-
-    // Texture
-    distortion.texture.needsUpdate = true;
 
     // Render
     renderer.render(scene, camera);
