@@ -21,7 +21,7 @@ void main()
 {
     vec3 newPosition = position;
     float distortionIntensity = 1.0 - distance(uv, uRayCastUvCoordinates);
-    distortionIntensity = smoothstep(0.0, 1.5, distortionIntensity) + 1.0;
+    distortionIntensity = smoothstep(0.0, 1.5, distortionIntensity) + 1.0; 
     vDistortionIntensity = distortionIntensity;
 
     // Pushes vertices away from cursor
@@ -30,14 +30,12 @@ void main()
     // vec3 normalizedDirection = normalize(direction);
     // newPosition += normalizedDirection * 0.1 * distortionIntensity;
 
-    // Scale based on Intensity 
+    // Scale based on Intensity ------------------------
     vec3 scale = vec3(distortionIntensity);
     mat4 newModelMatrix = scaleMatrix(modelMatrix, scale);
 
     // Final Position
     vec4 modelPosition = newModelMatrix * vec4(newPosition, 1.0);
-
-    // Final Position - just updates position
     // vec4 modelPosition = modelMatrix * vec4(newPosition, 1.0);
     
     vec4 viewPosition = viewMatrix * modelPosition;
@@ -47,6 +45,6 @@ void main()
 
     // vDisplacement = displacement;
     // vNormalizedVertexPosition = normalizedVertexPosition;
-    vDirection = normalizedDirection;
+    // vDirection = normalizedDirection;
     vRayCastUvCoordinates = uRayCastUvCoordinates;
 }
